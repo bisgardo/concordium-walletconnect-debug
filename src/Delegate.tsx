@@ -1,7 +1,4 @@
-import {
-  WalletConnectConnection,
-  WalletConnectionDelegate,
-} from "@concordium/wallet-connectors";
+import { WalletConnectConnection, WalletConnectionDelegate } from "@concordium/wallet-connectors";
 import React from "react";
 
 interface Props {
@@ -20,10 +17,7 @@ export interface ConnectionsProps extends State {
   delegate: Delegate;
 }
 
-export default class Delegate
-  extends React.Component<Props, State>
-  implements WalletConnectionDelegate
-{
+export default class Delegate extends React.Component<Props, State> implements WalletConnectionDelegate {
   constructor(props: Props) {
     super(props);
     this.state = {
@@ -31,10 +25,7 @@ export default class Delegate
     };
   }
 
-  onAccountChanged = (
-    connection: WalletConnectConnection,
-    address: string | undefined
-  ) => {
+  onAccountChanged = (connection: WalletConnectConnection, address: string | undefined) => {
     console.debug("onChainChanged", { connection, address });
     this.setState((state) => {
       const data = state.connections.get(connection);
@@ -47,10 +38,7 @@ export default class Delegate
     });
   };
 
-  onChainChanged = (
-    connection: WalletConnectConnection,
-    genesisHash: string
-  ) => {
+  onChainChanged = (connection: WalletConnectConnection, genesisHash: string) => {
     console.debug("onChainChanged", { connection, genesisHash });
     this.setState((state) => {
       const data = state.connections.get(connection);
@@ -63,10 +51,7 @@ export default class Delegate
     });
   };
 
-  onConnected = (
-    connection: WalletConnectConnection,
-    address: string | undefined
-  ) => {
+  onConnected = (connection: WalletConnectConnection, address: string | undefined) => {
     console.debug("onConnected", { connection, address });
     this.setState((state) => {
       const connections = new Map(state.connections);
