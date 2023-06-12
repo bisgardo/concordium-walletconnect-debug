@@ -1,5 +1,5 @@
 import { CONCORDIUM_WALLET_CONNECT_PROJECT_ID, TESTNET, WalletConnectConnector } from "@concordium/wallet-connectors";
-import { Container } from "react-bootstrap";
+import { Col, Container, Row } from "react-bootstrap";
 import { useEffect, useState } from "react";
 import { SignClientTypes } from "@walletconnect/types";
 import Delegate, { ConnectionsProps } from "./Delegate.tsx";
@@ -19,8 +19,12 @@ export default function App() {
     <Delegate>
       {(props) => (
         <Container>
-          <h1>WalletConnect test</h1>
-          <Connections {...props} />
+          <Row className="mt-3 mb-3">
+            <Col>
+              <h1>WalletConnect test</h1>
+              <Connections {...props} />
+            </Col>
+          </Row>
         </Container>
       )}
     </Delegate>
