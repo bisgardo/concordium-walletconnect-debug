@@ -1,0 +1,56 @@
+name: Build and publish
+on:
+  push:
+    branches: main
+
+# Disallow concurrent workflows.
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: 18
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '${{env.NODE_VERSION}}'
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build site
+        run: npm run build
+      - name: Package site
+        run: tar -cf ./site.tar -C ./dist .
+      - name: Upload site package
+        uses: actions/upload-artifact@v3
+        with:
+          name: github-pages
+          path: ./site.tar
+
+  publish:
+    needs: build
+
+    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment.
+    permissions:
+      pages: write    # permission to deploy to Pages
+      id-token: write # permission to verify the deployment originates from an appropriate source
+
+    # Deploy to the github-pages environment.
+    # Build and deployment source "GitHub Actions" must be selected in the repo settings
+    # for the URL variable to be non-empty.
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish site on GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1
