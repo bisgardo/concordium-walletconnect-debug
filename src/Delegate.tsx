@@ -9,6 +9,7 @@ interface ConnectionData {
   account: string | undefined;
   chain: string | undefined;
 }
+
 interface State {
   connections: Map<WalletConnectConnection, ConnectionData>;
 }
