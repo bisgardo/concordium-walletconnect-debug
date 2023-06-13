@@ -4,6 +4,7 @@ import Connection from "./Connection.tsx";
 import { useEffect, useState } from "react";
 import { CONCORDIUM_WALLET_CONNECT_PROJECT_ID, TESTNET, WalletConnectConnector } from "@concordium/wallet-connectors";
 import { SignClientTypes } from "@walletconnect/types";
+import Connector from "./Connector.tsx";
 
 const WALLET_CONNECT_OPTS: SignClientTypes.Options = {
   projectId: CONCORDIUM_WALLET_CONNECT_PROJECT_ID,
@@ -47,9 +48,16 @@ function Main({ connections, delegate }: ConnectionsProps) {
 
   return (
     <>
+      {connector && (
+        <>
+          <h2>Connector</h2>
+          <Connector connector={connector} />
+        </>
+      )}
+
       {[...connections.entries()].map(([connection, { account, chain }], idx) => (
         <div key={idx}>
-          <h3>Connection {idx + 1}</h3>
+          <h2>Connection #{idx}</h2>
           <Connection connection={connection} account={account} chain={chain} />
         </div>
       ))}
