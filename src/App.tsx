@@ -48,19 +48,18 @@ function Main({ connections, delegate }: ConnectionsProps) {
 
   return (
     <>
-      {connector && (
-        <>
-          <h2>Connector</h2>
-          <Connector connector={connector} />
-        </>
-      )}
+      <h2>Connector</h2>
+      {connector && <Connector connector={connector} />}
+      {!connector && <i>None</i>}
 
+      <h2>Available connections</h2>
       {[...connections.entries()].map(([connection, { account, chain }], idx) => (
         <div key={idx}>
           <h2>Connection #{idx}</h2>
           <Connection connection={connection} account={account} chain={chain} />
         </div>
       ))}
+      {connections.size === 0 && <i>None</i>}
     </>
   );
 }

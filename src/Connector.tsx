@@ -2,6 +2,7 @@ import { WalletConnectConnector } from "@concordium/wallet-connectors";
 import Session from "./Session.tsx";
 import Metadata from "./Metadata.tsx";
 import { IPairing } from "@walletconnect/types";
+import { Card, Col, ListGroup, Row } from "react-bootstrap";
 
 interface Props {
   connector: WalletConnectConnector;
@@ -9,46 +10,100 @@ interface Props {
 
 export default function Connector({ connector }: Props) {
   const { client } = connector;
+  // TODO Force refresh periodically or listen to all events (and refresh on them).
   return (
     <>
-      <h3>Name</h3>
-      {client.name}
-      <h3>Context</h3>
-      {client.context}
-      <h3>Client metadata</h3>
-      <Metadata metadata={client.metadata} />
-      <h3>Pending session requests</h3>
-      {client.getPendingSessionRequests().map((req, idx) => (
-        <div key={idx}>
-          <h4>#{idx}</h4>
-          <div>Topic: {req.topic}</div>
-          <div>ID: {req.id}</div>
-          <div>Params: {JSON.stringify(req.params)}</div>
-        </div>
-      ))}
-      <h3>Sessions</h3>
-      {[...client.session.map.entries()].map(([key, session], idx) => (
-        <div key={idx}>
-          <h4>#{idx}</h4>
-          <div>Key: {key}</div>
-          <Session session={session} />
-        </div>
-      ))}
-      <h3>Proposals</h3>
-      {[...client.proposal.map.entries()].map(([key, proposal], idx) => (
-        <div key={idx}>
-          <h4>#{idx}</h4>
-          <div>Key: {key}</div>
-          <div>Proposal ID: {proposal.id}</div>
-          <div>Proposer public key: {proposal.proposer.publicKey}</div>
-          <div>Proposer metadata:</div>
-          <Metadata metadata={proposal.proposer.metadata} />
-          <div>Expiry: {proposal.expiry}</div>
-          <div>Pairing topic: {proposal.pairingTopic}</div>
-        </div>
-      ))}
-      <h3>Core client pairing</h3>
-      <Pairing pairing={client.core.pairing} />
+      <Row>
+        <Col>
+          <Card className="mb-2">
+            <Card.Header>Client</Card.Header>
+            <Card.Body>
+              <Card.Text>
+                <Row>
+                  <Col md={3}>
+                    <Card.Title>Name</Card.Title>
+                    {client.name}
+                  </Col>
+                  <Col md={3}>
+                    <Card.Title>Context</Card.Title>
+                    {client.context}
+                  </Col>
+                  <Col md={6}>
+                    <Card.Title>Metadata</Card.Title>
+                    <Metadata metadata={client.metadata} />
+                  </Col>
+                </Row>
+              </Card.Text>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+      <Row>
+        <Col md={6}>
+          <Card className="mb-2">
+            <Card.Header>Pending session requests</Card.Header>
+            <Card.Body>
+              <Card.Text>
+                <ListGroup>
+                  {client.getPendingSessionRequests().map((req, idx) => (
+                    <ListGroup.Item key={idx}>
+                      <div>Topic: {req.topic}</div>
+                      <div>ID: {req.id}</div>
+                      <div>Params: {JSON.stringify(req.params)}</div>
+                    </ListGroup.Item>
+                  ))}
+                </ListGroup>
+              </Card.Text>
+            </Card.Body>
+          </Card>
+        </Col>
+        <Col md={6}>
+          <Card className="mb-2">
+            <Card.Header>Sessions</Card.Header>
+            <Card.Body>
+              <Card.Text>
+                <ListGroup>
+                  {/* TODO verify that map key is topic and then just use values */}
+                  {[...client.session.map.entries()].map(([key, session], idx) => (
+                    <ListGroup.Item key={idx}>
+                      <div>Key: {key}</div>
+                      <Session session={session} />
+                    </ListGroup.Item>
+                  ))}
+                </ListGroup>
+              </Card.Text>
+            </Card.Body>
+          </Card>
+        </Col>
+      </Row>
+      <Card className="mb-2">
+        <Card.Header>Proposals</Card.Header>
+        <Card.Body>
+          <Card.Text>
+            <ListGroup>
+              {/* key in proposal map equals proposal ID */}
+              {[...client.proposal.map.values()].map((proposal, idx) => (
+                <ListGroup.Item key={idx}>
+                  <div>Proposal ID: {proposal.id}</div>
+                  <div>Proposer public key: {proposal.proposer.publicKey}</div>
+                  <div>Proposer metadata:</div>
+                  <Metadata metadata={proposal.proposer.metadata} />
+                  <div>Expiry: {proposal.expiry}</div>
+                  <div>Pairing topic: {proposal.pairingTopic}</div>
+                </ListGroup.Item>
+              ))}
+            </ListGroup>
+          </Card.Text>
+        </Card.Body>
+      </Card>
+      <Card className="mb-2">
+        <Card.Header>Core client: Pairing</Card.Header>
+        <Card.Body>
+          <Card.Text>
+            <Pairing pairing={client.core.pairing} />
+          </Card.Text>
+        </Card.Body>
+      </Card>
     </>
   );
 }
@@ -60,22 +115,37 @@ interface PairingProps {
 function Pairing({ pairing }: PairingProps) {
   return (
     <>
-      <h3>Pairing: {pairing.name}</h3>
-      <div>Context: {pairing.context}</div>
-      <div>Pairings:</div>
-        {[...pairing.pairings.map.entries()].map(([key, pairing], idx) => (
-          <>
-              <h4>#{idx}</h4>
-            <div>Key: {key}</div>
-            <div>Expiry: {pairing.expiry}</div>
-            <div>Topic: {pairing.topic}</div>
-            <div>Relay:</div>
-            {JSON.stringify(pairing.relay)}
-            <div>Active: {pairing.active}</div>
-            <div>Metadata:</div>
-            {pairing.peerMetadata && <Metadata metadata={pairing.peerMetadata} />}
-          </>
-        ))}
+      <Row className="mb-4">
+        <Col>
+          <Card.Title>Name</Card.Title>
+          {pairing.name}
+        </Col>
+        <Col>
+          <Card.Title>Context</Card.Title>
+          {pairing.context}
+        </Col>
+      </Row>
+      <Row>
+        <Col>
+          <Card.Title>Pairings</Card.Title>
+          <ListGroup>
+            {/* key in pairings map equals topic */}
+            {[...pairing.pairings.map.values()].map((pairing, idx) => (
+              <ListGroup.Item key={idx}>
+                <div>Topic: {pairing.topic}</div>
+                <div>
+                  Expiry: {pairing.expiry} ({new Date(pairing.expiry * 1000).toISOString()})
+                </div>
+                <div>Relay:</div>
+                {JSON.stringify(pairing.relay)}
+                <div>Active: {pairing.active.toString()}</div>
+                <div>Metadata:</div>
+                {pairing.peerMetadata && <Metadata metadata={pairing.peerMetadata} />}
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
+        </Col>
+      </Row>
     </>
   );
 }
