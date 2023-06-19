@@ -38,6 +38,36 @@ export default function Connector({ connector }: Props) {
           </Card>
         </Col>
       </Row>
+      <Card className="mb-2">
+        <Card.Header>Pairing</Card.Header>
+        <Card.Body>
+          <Card.Text>
+            <Pairing pairing={client.core.pairing} />
+          </Card.Text>
+        </Card.Body>
+      </Card>
+      <Card className="mb-2">
+        <Card.Header>Proposals</Card.Header>
+        <Card.Body>
+          <Card.Text>
+            <ListGroup>
+              {/* key in proposal map equals proposal ID */}
+              {[...client.proposal.map.values()].map((proposal, idx) => (
+                <ListGroup.Item key={idx}>
+                  <div>Proposal ID: {proposal.id}</div>
+                  <div>Proposer public key: {proposal.proposer.publicKey}</div>
+                  <div>Proposer metadata:</div>
+                  <Metadata metadata={proposal.proposer.metadata} />
+                  <div>
+                    Expiry: <Expiry unixSecs={proposal.expiry} />
+                  </div>
+                  <div>Pairing topic: {proposal.pairingTopic}</div>
+                </ListGroup.Item>
+              ))}
+            </ListGroup>
+          </Card.Text>
+        </Card.Body>
+      </Card>
       <Row>
         <Col md={6}>
           <Card className="mb-2">
@@ -76,40 +106,20 @@ export default function Connector({ connector }: Props) {
           </Card>
         </Col>
       </Row>
-      <Card className="mb-2">
-        <Card.Header>Proposals</Card.Header>
-        <Card.Body>
-          <Card.Text>
-            <ListGroup>
-              {/* key in proposal map equals proposal ID */}
-              {[...client.proposal.map.values()].map((proposal, idx) => (
-                <ListGroup.Item key={idx}>
-                  <div>Proposal ID: {proposal.id}</div>
-                  <div>Proposer public key: {proposal.proposer.publicKey}</div>
-                  <div>Proposer metadata:</div>
-                  <Metadata metadata={proposal.proposer.metadata} />
-                  <div>Expiry: {proposal.expiry}</div>
-                  <div>Pairing topic: {proposal.pairingTopic}</div>
-                </ListGroup.Item>
-              ))}
-            </ListGroup>
-          </Card.Text>
-        </Card.Body>
-      </Card>
-      <Card className="mb-2">
-        <Card.Header>Core client: Pairing</Card.Header>
-        <Card.Body>
-          <Card.Text>
-            <Pairing pairing={client.core.pairing} />
-          </Card.Text>
-        </Card.Body>
-      </Card>
     </>
   );
 }
 
 interface PairingProps {
   pairing: IPairing;
+}
+
+function Expiry({ unixSecs }: { unixSecs: number }) {
+  return (
+    <>
+      {new Date(unixSecs * 1000).toISOString()} ({unixSecs})
+    </>
+  );
 }
 
 function Pairing({ pairing }: PairingProps) {
@@ -134,10 +144,14 @@ function Pairing({ pairing }: PairingProps) {
               <ListGroup.Item key={idx}>
                 <div>Topic: {pairing.topic}</div>
                 <div>
-                  Expiry: {pairing.expiry} ({new Date(pairing.expiry * 1000).toISOString()})
+                  Expiry:
+                  <Expiry unixSecs={pairing.expiry} />
                 </div>
                 <div>Relay:</div>
-                {JSON.stringify(pairing.relay)}
+                <ul>
+                  <li>Protocol: {pairing.relay.protocol}</li>
+                  <li>Data: {pairing.relay.data}</li>
+                </ul>
                 <div>Active: {pairing.active.toString()}</div>
                 <div>Metadata:</div>
                 {pairing.peerMetadata && <Metadata metadata={pairing.peerMetadata} />}
