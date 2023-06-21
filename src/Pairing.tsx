@@ -22,7 +22,7 @@ export default function Pairing({ pairing }: PairingProps) {
       </Row>
       <Row>
         <Col>
-          <Card.Title>Pairings</Card.Title>
+          <Card.Title>Pairings ({pairing.pairings.length})</Card.Title>
           <ListGroup>
             {/* key in pairings map equals topic */}
             {[...pairing.pairings.map.values()].map((pairing, idx) => (

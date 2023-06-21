@@ -1,10 +1,10 @@
-import QRCodeModal from "@walletconnect/qrcode-modal";
 import SignClient from "@walletconnect/sign-client";
-import { ISignClient, SignClientTypes } from "@walletconnect/types";
+import { SignClientTypes } from "@walletconnect/types";
 import { Result, ResultAsync } from "neverthrow";
 import { useEffect, useReducer, useState } from "react";
 import { Alert, Button, Col, Container, Row } from "react-bootstrap";
-import WalletConnectSignClient from "./WalletConnectSignClient.tsx";
+import Client from "./Client.tsx";
+import { connect } from "./walletconnect.ts";
 
 const WALLET_CONNECT_OPTS: SignClientTypes.Options = {
   projectId: "76324905a70fe5c388bab46d3e0564dc",
@@ -15,34 +15,6 @@ const WALLET_CONNECT_OPTS: SignClientTypes.Options = {
     icons: ["https://walletconnect.com/walletconnect-logo.png"],
   },
 };
-
-async function connect(client: ISignClient, chainId: string, cancel: () => void) {
-  try {
-    // If we passed the topic of an existing pairing, then 'uri' would be undefined.
-    const { uri, approval } = await client.connect({
-      requiredNamespaces: {
-        ccd: {
-          methods: ["sign_and_send_transaction", "sign_message"],
-          chains: [chainId],
-          events: ["chain_changed", "accounts_changed"],
-        },
-      },
-    });
-    if (uri) {
-      // Open modal as we're not connecting to an existing pairing.
-      QRCodeModal.open(uri, cancel);
-    }
-    return await approval();
-  } catch (e) {
-    // Ignore falsy errors.
-    if (e) {
-      console.error(`WalletConnect client error: ${e}`);
-    }
-    cancel();
-  } finally {
-    QRCodeModal.close();
-  }
-}
 
 // const SIGN_CLIENT_EVENTS: SignClientTypes.Event[] = [
 //   "session_proposal",
@@ -86,14 +58,14 @@ export default function App() {
   }, [client]);
 
   return (
-    <Container>
+    <Container fluid>
       <Row className="mt-3 mb-3">
         <Col>
           <h1>WalletConnect Debugger <Button size="sm" onClick={forceUpdate}>Refresh</Button></h1>
           {client?.match(
             (client) => (
               // Changing prop 'key' forces entire component subtree to not only re-render, but also re-draw.
-              <WalletConnectSignClient key={key} client={client} />
+              <Client key={key} client={client} />
             ),
             (err) => (
               <Alert>{err.toString()}</Alert>
