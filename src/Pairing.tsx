@@ -3,11 +3,11 @@ import { Card, Col, ListGroup, Row } from "react-bootstrap";
 import Expiry from "./Expiry.tsx";
 import Metadata from "./Metadata.tsx";
 
-interface PairingProps {
+interface Props {
   pairing: IPairing;
 }
 
-export default function Pairing({ pairing }: PairingProps) {
+export default function Pairing({ pairing }: Props) {
   return (
     <>
       <Row className="mb-4">

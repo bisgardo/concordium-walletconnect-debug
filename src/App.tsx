@@ -61,7 +61,12 @@ export default function App() {
     <Container fluid>
       <Row className="mt-3 mb-3">
         <Col>
-          <h1>WalletConnect Debugger <Button size="sm" onClick={forceUpdate}>Refresh</Button></h1>
+          <h1>
+            WalletConnect Debugger{" "}
+            <Button size="sm" onClick={forceUpdate}>
+              Refresh
+            </Button>
+          </h1>
           {client?.match(
             (client) => (
               // Changing prop 'key' forces entire component subtree to not only re-render, but also re-draw.
