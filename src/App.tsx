@@ -1,4 +1,4 @@
-import { Alert, Col, Container, Row } from "react-bootstrap";
+import { Alert, Button, Col, Container, Row } from "react-bootstrap";
 import SignClient from "@walletconnect/sign-client";
 import QRCodeModal from "@walletconnect/qrcode-modal";
 import { useEffect, useReducer, useState } from "react";
@@ -43,18 +43,18 @@ async function connect(client: ISignClient, chainId: string, cancel: () => void)
   }
 }
 
-const SIGN_CLIENT_EVENTS: SignClientTypes.Event[] = [
-  "session_proposal",
-  "session_update",
-  "session_extend",
-  "session_ping",
-  "session_delete",
-  "session_expire",
-  "session_request",
-  "session_request_sent",
-  "session_event",
-  "proposal_expire",
-];
+// const SIGN_CLIENT_EVENTS: SignClientTypes.Event[] = [
+//   "session_proposal",
+//   "session_update",
+//   "session_extend",
+//   "session_ping",
+//   "session_delete",
+//   "session_expire",
+//   "session_request",
+//   "session_request_sent",
+//   "session_event",
+//   "proposal_expire",
+// ];
 
 export default function App() {
   // Initialize SignClient immediately.
@@ -63,15 +63,17 @@ export default function App() {
     ResultAsync.fromPromise(SignClient.init(WALLET_CONNECT_OPTS), (err) => err as Error).then(setClient);
   }, []);
 
-  const [_eventCount, forceUpdate] = useReducer((x) => x + 1, 0);
-  // Register event handlers to refresh page on initialized client.
-  useEffect(() => {
-    client?.map((client) => {
-      SIGN_CLIENT_EVENTS.map((event) => {
-        client.on(event, forceUpdate);
-      });
-    });
-  }, [client]);
+  // Force refresh "client" component tree using "key" prop as React doesn't track changes within it.
+  const [key, forceUpdate] = useReducer((x) => x + 1, 0);
+
+  // // Register event handlers to refresh page on initialized client.
+  // useEffect(() => {
+  //   client?.map((client) => {
+  //     SIGN_CLIENT_EVENTS.map((event) => {
+  //       client.on(event, forceUpdate);
+  //     });
+  //   });
+  // }, [client]);
 
   // Open connection as soon as client is initialized.
   useEffect(() => {
@@ -86,10 +88,10 @@ export default function App() {
     <Container>
       <Row className="mt-3 mb-3">
         <Col>
-          <h1>WalletConnect Debugger</h1>
+          <h1>WalletConnect Debugger <Button size="sm" onClick={forceUpdate}>Refresh</Button></h1>
           {client?.match(
             (client) => (
-              <WalletConnectSignClient client={client} />
+              <WalletConnectSignClient key={key} client={client} />
             ),
             (err) => (
               <Alert>{err.toString()}</Alert>

@@ -1,5 +1,6 @@
 import { SessionTypes } from "@walletconnect/types";
 import Metadata from "./Metadata.tsx";
+import { Card } from "react-bootstrap";
 
 interface Props {
   session: SessionTypes.Struct;
@@ -7,14 +8,13 @@ interface Props {
 
 export default function Session({ session }: Props) {
   return (
-    <ul>
-      <li>Topic: {session.topic}</li>
-      <li>Relay protocol: {session.relay.protocol}</li>
-      <li>Relay data: {session.relay.data ?? <i>None</i>}</li>
-      <li>Expiry: {session.expiry}</li>
-      <li>Acknowledged: {session.acknowledged.toString()}</li>
-      <li>Controller: {session.controller}</li>
-      <li>
+    <>
+      <Card.Text>Topic: {session.topic}</Card.Text>
+      <Card.Text>Relay protocol: {session.relay.protocol}</Card.Text>
+      <Card.Text>Relay data: {session.relay.data ?? <i>None</i>}</Card.Text>
+      <Card.Text>Expiry: {session.expiry}</Card.Text>
+      <Card.Text>Acknowledged: {session.acknowledged.toString()}</Card.Text>
+      <Card.Text>Controller: {session.controller}</Card.Text>
         Namespaces:
         <ul>
           {session.namespaces &&
@@ -27,8 +27,6 @@ export default function Session({ session }: Props) {
               </li>
             ))}
         </ul>
-      </li>
-      <li>
         Required namespaces:
         <ul>
           {session.requiredNamespaces &&
@@ -41,15 +39,12 @@ export default function Session({ session }: Props) {
               </li>
             ))}
         </ul>
-      </li>
-      <li>Self public key: {session.self.publicKey}</li>
-      <li>
-        Self metadata: <Metadata metadata={session.self.metadata} />
-      </li>
-      <li>Peer public key: {session.peer.publicKey}</li>
-      <li>
-        Peer metadata: <Metadata metadata={session.peer.metadata} />
-      </li>
-    </ul>
+      <Card.Text>Self public key: {session.self.publicKey}</Card.Text>
+      Self metadata:
+      <Metadata metadata={session.self.metadata} />
+      <Card.Text>Peer public key: {session.peer.publicKey}</Card.Text>
+      <Card.Text>Peer metadata:</Card.Text>
+      <Metadata metadata={session.peer.metadata} />
+    </>
   );
 }

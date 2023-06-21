@@ -8,7 +8,6 @@ interface Props {
 }
 
 export default function WalletConnectSignClient({ client }: Props) {
-  // TODO Force refresh periodically or listen to all events (and refresh on them).
   return (
     <>
       <Row>
@@ -82,10 +81,9 @@ export default function WalletConnectSignClient({ client }: Props) {
             <Card.Header>Sessions</Card.Header>
             <Card.Body>
               <ListGroup>
-                {/* TODO verify that map key is topic and then just use values */}
-                {[...client.session.map.entries()].map(([key, session], idx) => (
+                {/* key in session map equals topic */}
+                {[...client.session.map.values()].map((session, idx) => (
                   <ListGroup.Item key={idx}>
-                    <Card.Text>Key: {key}</Card.Text>
                     <Session session={session} />
                   </ListGroup.Item>
                 ))}
