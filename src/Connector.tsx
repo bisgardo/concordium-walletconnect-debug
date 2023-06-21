@@ -28,7 +28,7 @@ export default function Connector({ connector }: Props) {
                   <Card.Text>{client.context}</Card.Text>
                 </Col>
                 <Col md={6}>
-                  <Card.Title>Metadata</Card.Title>
+                  Metadata:
                   <Metadata metadata={client.metadata} />
                 </Col>
               </Row>
@@ -51,12 +51,12 @@ export default function Connector({ connector }: Props) {
               <ListGroup.Item key={idx}>
                 <Card.Text>Proposal ID: {proposal.id}</Card.Text>
                 <Card.Text>Proposer public key: {proposal.proposer.publicKey}</Card.Text>
-                <Card.Text>Proposer metadata:</Card.Text>
+                Proposer metadata:
                 <Metadata metadata={proposal.proposer.metadata} />
                 <Card.Text>
                   Expiry: <Expiry unixSecs={proposal.expiry} />
                 </Card.Text>
-                <Card.Text>Pairing topic: {proposal.pairingTopic}</Card.Text>
+                <Card.Text>Pairing topic: {proposal.pairingTopic ?? <i>None</i>}</Card.Text>
               </ListGroup.Item>
             ))}
           </ListGroup>
@@ -134,19 +134,17 @@ function Pairing({ pairing }: PairingProps) {
               <ListGroup.Item key={idx}>
                 <Card.Text>Topic: {pairing.topic}</Card.Text>
                 <Card.Text>
-                  Expiry:
-                  <Expiry unixSecs={pairing.expiry} />
+                  Expiry: <Expiry unixSecs={pairing.expiry} />
                 </Card.Text>
-                <Card.Text>Relay:</Card.Text>
+                Relay:
                 <ul>
                   <li>Protocol: {pairing.relay.protocol}</li>
-                  <li>Data: {pairing.relay.data}</li>
+                  <li>Data: {pairing.relay.data ?? <i>None</i>}</li>
                 </ul>
                 <Card.Text>Active: {pairing.active.toString()}</Card.Text>
-                <Card.Text>Metadata:</Card.Text>
-                {pairing.peerMetadata && <Metadata metadata={pairing.peerMetadata} />}
+                Metadata: {(pairing.peerMetadata && <Metadata metadata={pairing.peerMetadata} />) ?? <i>None</i>}
               </ListGroup.Item>
-            ))}
+          ))}
           </ListGroup>
         </Col>
       </Row>

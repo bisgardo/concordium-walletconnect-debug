@@ -17,11 +17,11 @@ export default function Connection({ connection, account, chain }: Props) {
         <Row>
           <Col>
             <Card.Title>Account</Card.Title>
-            <Card.Text>{account}</Card.Text>
+            <Card.Text>{account ?? <i>None</i>}</Card.Text>
           </Col>
           <Col>
             <Card.Title>Chain</Card.Title>
-            <Card.Text>{chain}</Card.Text>
+            <Card.Text>{chain ?? <i>None</i>}</Card.Text>
           </Col>
         </Row>
         <Row>
