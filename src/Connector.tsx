@@ -28,7 +28,7 @@ export default function Connector({ connector }: Props) {
                   <Card.Text>{client.context}</Card.Text>
                 </Col>
                 <Col md={6}>
-                  Metadata:
+                  <Card.Title>Metadata</Card.Title>
                   <Metadata metadata={client.metadata} />
                 </Col>
               </Row>
