@@ -54,10 +54,7 @@ function Main({ connections, delegate }: ConnectionsProps) {
 
       <h2>Available connections</h2>
       {[...connections.entries()].map(([connection, { account, chain }], idx) => (
-        <div key={idx}>
-          <h2>Connection #{idx}</h2>
-          <Connection connection={connection} account={account} chain={chain} />
-        </div>
+        <Connection key={idx} connection={connection} account={account} chain={chain} />
       ))}
       {connections.size === 0 && <i>None</i>}
     </>
