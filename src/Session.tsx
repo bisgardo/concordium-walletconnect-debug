@@ -1,6 +1,6 @@
 import { SessionTypes } from "@walletconnect/types";
-import Metadata from "./Metadata.tsx";
 import { Card } from "react-bootstrap";
+import Metadata from "./Metadata.tsx";
 
 interface Props {
   session: SessionTypes.Struct;

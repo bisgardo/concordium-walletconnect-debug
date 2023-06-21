@@ -1,10 +1,10 @@
-import { Alert, Button, Col, Container, Row } from "react-bootstrap";
-import SignClient from "@walletconnect/sign-client";
 import QRCodeModal from "@walletconnect/qrcode-modal";
-import { useEffect, useReducer, useState } from "react";
+import SignClient from "@walletconnect/sign-client";
 import { ISignClient, SignClientTypes } from "@walletconnect/types";
-import WalletConnectSignClient from "./WalletConnectSignClient.tsx";
 import { Result, ResultAsync } from "neverthrow";
+import { useEffect, useReducer, useState } from "react";
+import { Alert, Button, Col, Container, Row } from "react-bootstrap";
+import WalletConnectSignClient from "./WalletConnectSignClient.tsx";
 
 const WALLET_CONNECT_OPTS: SignClientTypes.Options = {
   projectId: "76324905a70fe5c388bab46d3e0564dc",
@@ -18,6 +18,7 @@ const WALLET_CONNECT_OPTS: SignClientTypes.Options = {
 
 async function connect(client: ISignClient, chainId: string, cancel: () => void) {
   try {
+    // If we passed the topic of an existing pairing, then 'uri' would be undefined.
     const { uri, approval } = await client.connect({
       requiredNamespaces: {
         ccd: {
@@ -91,6 +92,7 @@ export default function App() {
           <h1>WalletConnect Debugger <Button size="sm" onClick={forceUpdate}>Refresh</Button></h1>
           {client?.match(
             (client) => (
+              // Changing prop 'key' forces entire component subtree to not only re-render, but also re-draw.
               <WalletConnectSignClient key={key} client={client} />
             ),
             (err) => (

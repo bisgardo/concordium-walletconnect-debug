@@ -1,7 +1,9 @@
-import Session from "./Session.tsx";
-import Metadata from "./Metadata.tsx";
-import { IPairing, ISignClient } from "@walletconnect/types";
+import { ISignClient } from "@walletconnect/types";
 import { Card, Col, ListGroup, Row } from "react-bootstrap";
+import Expiry from "./Expiry.tsx";
+import Metadata from "./Metadata.tsx";
+import Pairing from "./Pairing.tsx";
+import Session from "./Session.tsx";
 
 interface Props {
   client: ISignClient;
@@ -34,13 +36,13 @@ export default function WalletConnectSignClient({ client }: Props) {
         </Col>
       </Row>
       <Card className="mb-2">
-        <Card.Header>Pairing</Card.Header>
+        <Card.Header>Pairing ({client.core.pairing.pairings.length})</Card.Header>
         <Card.Body>
           <Pairing pairing={client.core.pairing} />
         </Card.Body>
       </Card>
       <Card className="mb-2">
-        <Card.Header>Proposals</Card.Header>
+        <Card.Header>Proposals ({client.proposal.length})</Card.Header>
         <Card.Body>
           <ListGroup>
             {/* key in proposal map equals proposal ID */}
@@ -62,7 +64,7 @@ export default function WalletConnectSignClient({ client }: Props) {
       <Row>
         <Col md={6}>
           <Card className="mb-2">
-            <Card.Header>Pending session requests</Card.Header>
+            <Card.Header>Pending session requests ({client.getPendingSessionRequests().length})</Card.Header>
             <Card.Body>
               <ListGroup>
                 {client.getPendingSessionRequests().map((req, idx) => (
@@ -78,7 +80,7 @@ export default function WalletConnectSignClient({ client }: Props) {
         </Col>
         <Col md={6}>
           <Card className="mb-2">
-            <Card.Header>Sessions</Card.Header>
+            <Card.Header>Sessions ({client.session.length})</Card.Header>
             <Card.Body>
               <ListGroup>
                 {/* key in session map equals topic */}
@@ -90,58 +92,6 @@ export default function WalletConnectSignClient({ client }: Props) {
               </ListGroup>
             </Card.Body>
           </Card>
-        </Col>
-      </Row>
-    </>
-  );
-}
-
-interface PairingProps {
-  pairing: IPairing;
-}
-
-function Expiry({ unixSecs }: { unixSecs: number }) {
-  return (
-    <>
-      {new Date(unixSecs * 1000).toISOString()} ({unixSecs})
-    </>
-  );
-}
-
-function Pairing({ pairing }: PairingProps) {
-  return (
-    <>
-      <Row className="mb-4">
-        <Col>
-          <Card.Title>Name</Card.Title>
-          <Card.Text>{pairing.name}</Card.Text>
-        </Col>
-        <Col>
-          <Card.Title>Context</Card.Title>
-          <Card.Text>{pairing.context}</Card.Text>
-        </Col>
-      </Row>
-      <Row>
-        <Col>
-          <Card.Title>Pairings</Card.Title>
-          <ListGroup>
-            {/* key in pairings map equals topic */}
-            {[...pairing.pairings.map.values()].map((pairing, idx) => (
-              <ListGroup.Item key={idx}>
-                <Card.Text>Topic: {pairing.topic}</Card.Text>
-                <Card.Text>
-                  Expiry: <Expiry unixSecs={pairing.expiry} />
-                </Card.Text>
-                Relay:
-                <ul>
-                  <li>Protocol: {pairing.relay.protocol}</li>
-                  <li>Data: {pairing.relay.data ?? <i>None</i>}</li>
-                </ul>
-                <Card.Text>Active: {pairing.active.toString()}</Card.Text>
-                Metadata: {(pairing.peerMetadata && <Metadata metadata={pairing.peerMetadata} />) ?? <i>None</i>}
-              </ListGroup.Item>
-            ))}
-          </ListGroup>
         </Col>
       </Row>
     </>
