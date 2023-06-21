@@ -1,15 +1,13 @@
-import { WalletConnectConnector } from "@concordium/wallet-connectors";
 import Session from "./Session.tsx";
 import Metadata from "./Metadata.tsx";
-import { IPairing } from "@walletconnect/types";
+import { IPairing, ISignClient } from "@walletconnect/types";
 import { Card, Col, ListGroup, Row } from "react-bootstrap";
 
 interface Props {
-  connector: WalletConnectConnector;
+  client: ISignClient;
 }
 
-export default function Connector({ connector }: Props) {
-  const { client } = connector;
+export default function WalletConnectSignClient({ client }: Props) {
   // TODO Force refresh periodically or listen to all events (and refresh on them).
   return (
     <>
@@ -144,7 +142,7 @@ function Pairing({ pairing }: PairingProps) {
                 <Card.Text>Active: {pairing.active.toString()}</Card.Text>
                 Metadata: {(pairing.peerMetadata && <Metadata metadata={pairing.peerMetadata} />) ?? <i>None</i>}
               </ListGroup.Item>
-          ))}
+            ))}
           </ListGroup>
         </Col>
       </Row>

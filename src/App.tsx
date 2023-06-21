@@ -1,13 +1,13 @@
-import { Col, Container, Row } from "react-bootstrap";
-import Delegate, { ConnectionsProps } from "./Delegate.tsx";
-import Connection from "./Connection.tsx";
-import { useEffect, useState } from "react";
-import { CONCORDIUM_WALLET_CONNECT_PROJECT_ID, TESTNET, WalletConnectConnector } from "@concordium/wallet-connectors";
-import { SignClientTypes } from "@walletconnect/types";
-import Connector from "./Connector.tsx";
+import { Alert, Col, Container, Row } from "react-bootstrap";
+import SignClient from "@walletconnect/sign-client";
+import QRCodeModal from "@walletconnect/qrcode-modal";
+import { useEffect, useReducer, useState } from "react";
+import { ISignClient, SignClientTypes } from "@walletconnect/types";
+import WalletConnectSignClient from "./WalletConnectSignClient.tsx";
+import { Result, ResultAsync } from "neverthrow";
 
 const WALLET_CONNECT_OPTS: SignClientTypes.Options = {
-  projectId: CONCORDIUM_WALLET_CONNECT_PROJECT_ID,
+  projectId: "76324905a70fe5c388bab46d3e0564dc",
   metadata: {
     name: "WalletConnect Debugger",
     description: "WalletConnector connection debugger",
@@ -16,47 +16,87 @@ const WALLET_CONNECT_OPTS: SignClientTypes.Options = {
   },
 };
 
-export default function App() {
-  return (
-    <Delegate>
-      {(props) => (
-        <Container>
-          <Row className="mt-3 mb-3">
-            <Col>
-              <h1>WalletConnect Debugger</h1>
-              <Main {...props} />
-            </Col>
-          </Row>
-        </Container>
-      )}
-    </Delegate>
-  );
+async function connect(client: ISignClient, chainId: string, cancel: () => void) {
+  try {
+    const { uri, approval } = await client.connect({
+      requiredNamespaces: {
+        ccd: {
+          methods: ["sign_and_send_transaction", "sign_message"],
+          chains: [chainId],
+          events: ["chain_changed", "accounts_changed"],
+        },
+      },
+    });
+    if (uri) {
+      // Open modal as we're not connecting to an existing pairing.
+      QRCodeModal.open(uri, cancel);
+    }
+    return await approval();
+  } catch (e) {
+    // Ignore falsy errors.
+    if (e) {
+      console.error(`WalletConnect client error: ${e}`);
+    }
+    cancel();
+  } finally {
+    QRCodeModal.close();
+  }
 }
 
-function Main({ connections, delegate }: ConnectionsProps) {
-  const [connector, setConnector] = useState<WalletConnectConnector>();
+const SIGN_CLIENT_EVENTS: SignClientTypes.Event[] = [
+  "session_proposal",
+  "session_update",
+  "session_extend",
+  "session_ping",
+  "session_delete",
+  "session_expire",
+  "session_request",
+  "session_request_sent",
+  "session_event",
+  "proposal_expire",
+];
+
+export default function App() {
+  // Initialize SignClient immediately.
+  const [client, setClient] = useState<Result<SignClient, Error>>();
   useEffect(() => {
-    if (delegate) {
-      WalletConnectConnector.create(WALLET_CONNECT_OPTS, delegate, TESTNET).then(setConnector).catch(console.error);
-    }
-  }, [delegate]);
+    ResultAsync.fromPromise(SignClient.init(WALLET_CONNECT_OPTS), (err) => err as Error).then(setClient);
+  }, []);
+
+  const [_eventCount, forceUpdate] = useReducer((x) => x + 1, 0);
+  // Register event handlers to refresh page on initialized client.
   useEffect(() => {
-    if (connector) {
-      connector.connect().catch(console.error);
-    }
-  }, [connector]);
+    client?.map((client) => {
+      SIGN_CLIENT_EVENTS.map((event) => {
+        client.on(event, forceUpdate);
+      });
+    });
+  }, [client]);
+
+  // Open connection as soon as client is initialized.
+  useEffect(() => {
+    client?.map((c) =>
+      connect(c, "ccd:testnet", () => {
+        // ignore cancel; i.e. if modal is closed
+      })
+    );
+  }, [client]);
 
   return (
-    <>
-      <h2>Connector</h2>
-      {connector && <Connector connector={connector} />}
-      {!connector && <i>None</i>}
-
-      <h2>Available connections</h2>
-      {[...connections.entries()].map(([connection, { account, chain }], idx) => (
-        <Connection key={idx} connection={connection} account={account} chain={chain} />
-      ))}
-      {connections.size === 0 && <i>None</i>}
-    </>
+    <Container>
+      <Row className="mt-3 mb-3">
+        <Col>
+          <h1>WalletConnect Debugger</h1>
+          {client?.match(
+            (client) => (
+              <WalletConnectSignClient client={client} />
+            ),
+            (err) => (
+              <Alert>{err.toString()}</Alert>
+            )
+          )}
+        </Col>
+      </Row>
+    </Container>
   );
 }
