@@ -25,16 +25,25 @@ const DEFAULT_CONNECT_PARAMS = JSON.stringify(
   null,
   2
 );
+
 const DEFAULT_DISCONNECT_REASON = JSON.stringify({
-  code: 500,
-  message: "Bad luck",
+  code: 1111,
+  message: "Too boring",
 });
+
+const DEFAULT_REQUEST_METHOD = "sign_and_send_transaction";
+const DEFAULT_REQUEST_PARAMS = JSON.stringify({
+  type: "Update",
+  schema: "",
+  sender: "",
+  payload: JSON.stringify({ amount: "0", address: { index: 0, subindex: 0}, receiveName: "", maxContractExecutionEnergy: 10000, message: "" }),
+}, null, 2);
 
 const parse = Result.fromThrowable(JSON.parse, (err) => err as Error);
 
 export default function Client({ client }: Props) {
   const [connectParams, setConnectParams] = useState(DEFAULT_CONNECT_PARAMS);
-  const [connectResult, setConnectResult] = useState<Result<SessionTypes.Struct | undefined, Error>>(); // TODO !!!
+  const [connectResult, setConnectResult] = useState<Result<SessionTypes.Struct | undefined, Error>>();
   const dismissConnectResult = useCallback(() => setConnectResult(undefined), []);
   const connect = useCallback(() => {
     dismissConnectResult();
@@ -68,6 +77,28 @@ export default function Client({ client }: Props) {
       )
       .then(setDisconnectResult);
   }, [client, disconnectTopic, disconnectReason]);
+
+  const [requestTopic, setRequestTopic] = useState("");
+  const [requestChain, setRequestChain] = useState("ccd:testnet");
+  const [requestMethod, setRequestMethod] = useState(DEFAULT_REQUEST_METHOD);
+  const [requestParams, setRequestParams] = useState(DEFAULT_REQUEST_PARAMS);
+  const [requestResult, setRequestResult] = useState<Result<unknown, Error>>();
+  const dismissRequestResult = useCallback(() => setRequestResult(undefined), []);
+  const sendRequest = useCallback(() => {
+    dismissRequestResult();
+    return parse(requestParams)
+      .asyncAndThen((params) =>
+        ResultAsync.fromPromise(
+          client.request({
+            topic: requestTopic,
+            request: { method: requestMethod, params },
+            chainId: requestChain,
+          }),
+          (err) => err as Error
+        )
+      )
+      .then(setRequestResult);
+  }, [client, requestTopic, requestChain, requestMethod, requestParams]);
   return (
     <>
       <Row>
@@ -106,21 +137,21 @@ export default function Client({ client }: Props) {
                       <>
                         {session && (
                           <>
-                            <Alert variant="success" dismissible onClose={dismissConnectResult}>
+                            <Alert variant="success" className="mt-2" dismissible onClose={dismissConnectResult}>
                               Session with topic <code title={JSON.stringify(session, null, 2)}>{session?.topic}</code>{" "}
                               created
                             </Alert>
                           </>
                         )}
                         {!session && (
-                          <Alert variant="warning" dismissible onClose={dismissConnectResult}>
+                          <Alert variant="warning" className="mt-2" dismissible onClose={dismissConnectResult}>
                             No session created
                           </Alert>
                         )}
                       </>
                     ),
                     (err) => (
-                      <Alert variant="danger" dismissible onClose={dismissConnectResult}>
+                      <Alert variant="danger" className="mt-2" dismissible onClose={dismissConnectResult}>
                         {err.toString()}
                       </Alert>
                     )
@@ -131,7 +162,6 @@ export default function Client({ client }: Props) {
                   <FloatingLabel label="Topic" className="mb-2">
                     <Form.Control
                       type="text"
-                      placeholder="Topic"
                       value={disconnectTopic}
                       onChange={(e) => setDisconnectTopic(e.target.value)}
                     />
@@ -155,6 +185,48 @@ export default function Client({ client }: Props) {
                     ),
                     (err) => (
                       <Alert variant="danger" className="mt-2" dismissible onClose={dismissDisconnectResult}>
+                        {err.toString()}
+                      </Alert>
+                    )
+                  )}
+                </Col>
+              </Row>
+              <Row className="mt-2">
+                <Col>
+                  <Card.Title>Request</Card.Title>
+                  <FloatingLabel label="Topic" className="mb-2">
+                    <Form.Control type="text" value={requestTopic} onChange={(e) => setRequestTopic(e.target.value)} />
+                  </FloatingLabel>
+                  <FloatingLabel label="Chain" className="mb-2">
+                    <Form.Control type="text" value={requestChain} onChange={(e) => setRequestChain(e.target.value)} />
+                  </FloatingLabel>
+                  <FloatingLabel label="Method" className="mb-2">
+                    <Form.Control
+                      type="text"
+                      value={requestMethod}
+                      onChange={(e) => setRequestMethod(e.target.value)}
+                    />
+                  </FloatingLabel>
+                  <FloatingLabel label="Params (JSON)" className="mb-2">
+                    <Form.Control
+                      as="textarea"
+                      style={{ height: "20em" }}
+                      value={requestParams}
+                      onChange={(e) => setRequestParams(e.target.value)}
+                    />
+                  </FloatingLabel>
+                  <FloatingLabel label="Expiry (not yet supported)" className="mb-2">
+                    <Form.Control type="text" value={""} disabled />
+                  </FloatingLabel>
+                  <Button onClick={sendRequest}>Send</Button>
+                  {requestResult?.match(
+                    (res) => (
+                      <Alert variant="success" className="mt-2" dismissible onClose={dismissRequestResult}>
+                        <pre>{JSON.stringify(res, null, 2)}</pre>
+                      </Alert>
+                    ),
+                    (err) => (
+                      <Alert variant="danger" className="mt-2" dismissible onClose={dismissRequestResult}>
                         {err.toString()}
                       </Alert>
                     )
