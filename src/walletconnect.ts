@@ -1,18 +1,10 @@
-import { ISignClient } from "@walletconnect/types";
+import { EngineTypes, ISignClient } from "@walletconnect/types";
 import QRCodeModal from "@walletconnect/qrcode-modal";
 
-export async function connect(client: ISignClient, chainId: string, cancel: () => void) {
+export async function connectWallet(client: ISignClient, params: EngineTypes.ConnectParams, cancel: () => void) {
   try {
     // If we passed the topic of an existing pairing, then 'uri' would be undefined.
-    const { uri, approval } = await client.connect({
-      requiredNamespaces: {
-        ccd: {
-          methods: ["sign_and_send_transaction", "sign_message"],
-          chains: [chainId],
-          events: ["chain_changed", "accounts_changed"],
-        },
-      },
-    });
+    const { uri, approval } = await client.connect(params);
     if (uri) {
       // Open modal as we're not connecting to an existing pairing.
       QRCodeModal.open(uri, cancel);

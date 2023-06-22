@@ -4,7 +4,6 @@ import { Result, ResultAsync } from "neverthrow";
 import { useEffect, useReducer, useState } from "react";
 import { Alert, Button, Col, Container, Row } from "react-bootstrap";
 import Client from "./Client.tsx";
-import { connect } from "./walletconnect.ts";
 
 const WALLET_CONNECT_OPTS: SignClientTypes.Options = {
   projectId: "76324905a70fe5c388bab46d3e0564dc",
@@ -36,8 +35,14 @@ export default function App() {
     ResultAsync.fromPromise(SignClient.init(WALLET_CONNECT_OPTS), (err) => err as Error).then(setClient);
   }, []);
 
-  // Force refresh "client" component tree using "key" prop as React doesn't track changes within it.
-  const [key, forceUpdate] = useReducer((x) => x + 1, 0);
+  // Force refresh "client" component tree as React doesn't track changes within it.
+  // Using the dummy value as prop "key" to the 'Client' component would force a complete rebuild/redraw of the entire component tree.
+  // This is not necessary for the components to refresh and would also clear output/error messages, which isn't what we want.
+  const [_refreshCount, forceUpdate] = useReducer((x) => x + 1, 0);
+
+  // If we listened to all events and rendered them (directly from the 'Client' component),
+  // this should automagically trigger a refresh of the whole subtree,
+  // rendering the refresh button irrelevant.
 
   // // Register event handlers to refresh page on initialized client.
   // useEffect(() => {
@@ -48,14 +53,14 @@ export default function App() {
   //   });
   // }, [client]);
 
-  // Open connection as soon as client is initialized.
-  useEffect(() => {
-    client?.map((c) =>
-      connect(c, "ccd:testnet", () => {
-        // ignore cancel; i.e. if modal is closed
-      })
-    );
-  }, [client]);
+  // // Open connection as soon as client is initialized.
+  // useEffect(() => {
+  //   client?.map((c) =>
+  //     connectWallet(c, "ccd:testnet", () => {
+  //       // ignore cancel; i.e. if modal is closed
+  //     })
+  //   );
+  // }, [client]);
 
   return (
     <Container fluid>
@@ -69,11 +74,10 @@ export default function App() {
           </h1>
           {client?.match(
             (client) => (
-              // Changing prop 'key' forces entire component subtree to not only re-render, but also re-draw.
-              <Client key={key} client={client} />
+              <Client client={client} />
             ),
             (err) => (
-              <Alert>{err.toString()}</Alert>
+              <Alert variant="danger">{err.toString()}</Alert>
             )
           )}
         </Col>

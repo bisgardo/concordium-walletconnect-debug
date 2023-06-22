@@ -1,15 +1,74 @@
-import { ISignClient } from "@walletconnect/types";
-import { Card, Col, ListGroup, Row } from "react-bootstrap";
+import { ISignClient, SessionTypes } from "@walletconnect/types";
+import { Alert, Button, Card, Col, FloatingLabel, Form, ListGroup, Row } from "react-bootstrap";
 import Expiry from "./Expiry.tsx";
 import Metadata from "./Metadata.tsx";
 import Pairing from "./Pairing.tsx";
 import Session from "./Session.tsx";
+import { useCallback, useState } from "react";
+import { connectWallet } from "./walletconnect.ts";
+import { Result, ResultAsync } from "neverthrow";
 
 interface Props {
   client: ISignClient;
 }
 
+const DEFAULT_CONNECT_PARAMS = JSON.stringify(
+  {
+    requiredNamespaces: {
+      ccd: {
+        methods: ["sign_and_send_transaction", "sign_message"],
+        chains: ["ccd:testnet"],
+        events: ["chain_changed", "accounts_changed"],
+      },
+    },
+  },
+  null,
+  2
+);
+const DEFAULT_DISCONNECT_REASON = JSON.stringify({
+  code: 500,
+  message: "Bad luck",
+});
+
+const parse = Result.fromThrowable(JSON.parse, (err) => err as Error);
+
 export default function Client({ client }: Props) {
+  const [connectParams, setConnectParams] = useState(DEFAULT_CONNECT_PARAMS);
+  const [connectResult, setConnectResult] = useState<Result<SessionTypes.Struct | undefined, Error>>(); // TODO !!!
+  const connect = useCallback(() => {
+    setConnectResult(undefined);
+    return parse(connectParams)
+      .asyncAndThen((params) =>
+        ResultAsync.fromPromise(
+          connectWallet(client, params, () => {
+            /* ignore closing modal */
+          }), // TODO cancel is also called on error...
+          (err) => err as Error
+        )
+      )
+      .then(setConnectResult);
+  }, [client, connectParams]);
+
+  const [disconnectTopic, setDisconnectTopic] = useState("");
+  const [disconnectReason, setDisconnectReason] = useState(DEFAULT_DISCONNECT_REASON);
+  const [disconnectResult, setDisconnectResult] = useState<Result<void, Error>>();
+  const disconnect = useCallback(() => {
+    setDisconnectResult(undefined);
+    return parse(disconnectReason)
+      .asyncAndThen((reason) =>
+        ResultAsync.fromPromise(
+          client.disconnect({
+            topic: disconnectTopic,
+            reason,
+          }),
+          (err) => {
+            console.error({ err });
+            return err as Error;
+          }
+        )
+      )
+      .then(setDisconnectResult);
+  }, [client, disconnectTopic, disconnectReason]);
   return (
     <>
       <Row>
@@ -29,6 +88,70 @@ export default function Client({ client }: Props) {
                 <Col md={6}>
                   <Card.Title>Metadata</Card.Title>
                   <Metadata metadata={client.metadata} />
+                </Col>
+              </Row>
+              <Row>
+                <Col>
+                  <Card.Title>Connect</Card.Title>
+                  <FloatingLabel label="Parameters" className="mb-2">
+                    <Form.Control
+                      as="textarea"
+                      style={{ height: "10em" }}
+                      value={connectParams}
+                      onChange={(e) => setConnectParams(e.target.value)}
+                    />
+                  </FloatingLabel>
+                  <Button onClick={connect}>Connect</Button>
+                  {connectResult?.match(
+                    (session) => (
+                      <Alert variant="success">
+                        {session && (
+                          <>
+                            Retrieved session with topic <code>{session?.topic}</code>.
+                          </>
+                        )}
+                        {!session && <>Retrieved empty session.</>}
+                        {/*<pre>{JSON.stringify(session, null, 2)}</pre>*/}
+                      </Alert>
+                    ),
+                    (err) => (
+                      <Alert variant="danger">Error: {err.toString()}</Alert>
+                    )
+                  )}
+                </Col>
+                <Col>
+                  <Card.Title>Disconnect</Card.Title>
+                  <FloatingLabel label="Topic" className="mb-2">
+                    <Form.Control
+                      type="text"
+                      placeholder="Topic"
+                      value={disconnectTopic}
+                      onChange={(e) => setDisconnectTopic(e.target.value)}
+                    />
+                  </FloatingLabel>
+                  <FloatingLabel label="Reason ({code, message, data?})" className="mb-2">
+                    <Form.Control
+                      type="text"
+                      placeholder="None"
+                      value={disconnectReason}
+                      onChange={(e) => setDisconnectReason(e.target.value)}
+                    />
+                  </FloatingLabel>
+                  {disconnectResult?.match(
+                    () => (
+                      <Alert variant="success" className="mt-2">
+                        OK
+                      </Alert>
+                    ),
+                    (err) => (
+                      <Alert variant="danger" className="mt-2">
+                        {err.toString()}
+                      </Alert>
+                    )
+                  )}
+                  <Button variant="danger" onClick={disconnect}>
+                    Disconnect
+                  </Button>
                 </Col>
               </Row>
             </Card.Body>
