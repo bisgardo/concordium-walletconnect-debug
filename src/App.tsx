@@ -67,7 +67,7 @@ export default function App() {
       <Row className="mt-3 mb-3">
         <Col>
           <h1>
-            WalletConnect Debugger{" "}
+            WalletConnect Debug Dashboard{" "}
             <Button size="sm" onClick={forceUpdate}>
               Refresh
             </Button>
@@ -77,7 +77,10 @@ export default function App() {
               <Client client={client} />
             ),
             (err) => (
-              <Alert variant="danger">{err.toString()}</Alert>
+              <Alert variant="danger">
+                Error initializing WalletConnect Sign Client.
+                <pre className="mb-0">{err.toString()}</pre>
+              </Alert>
             )
           )}
         </Col>

@@ -10,12 +10,6 @@ export async function connectWallet(client: ISignClient, params: EngineTypes.Con
       QRCodeModal.open(uri, cancel);
     }
     return await approval();
-  } catch (e) {
-    // Ignore falsy errors.
-    if (e) {
-      console.error(`WalletConnect client error: ${e}`);
-    }
-    cancel();
   } finally {
     QRCodeModal.close();
   }

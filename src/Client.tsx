@@ -1,12 +1,12 @@
 import { ISignClient, SessionTypes } from "@walletconnect/types";
-import { Alert, Button, Card, Col, FloatingLabel, Form, ListGroup, Row } from "react-bootstrap";
+import { Alert, Button, Card, Col, FloatingLabel, Form, ListGroup, Row, Spinner } from "react-bootstrap";
 import Expiry from "./Expiry.tsx";
 import Metadata from "./Metadata.tsx";
 import Pairing from "./Pairing.tsx";
 import Session from "./Session.tsx";
 import { useCallback, useState } from "react";
-import { connectWallet } from "./walletconnect.ts";
 import { Result, ResultAsync } from "neverthrow";
+import QRCodeModal from "@walletconnect/qrcode-modal";
 
 interface Props {
   client: ISignClient;
@@ -32,39 +32,64 @@ const DEFAULT_DISCONNECT_REASON = JSON.stringify({
 });
 
 const DEFAULT_REQUEST_METHOD = "sign_and_send_transaction";
-const DEFAULT_REQUEST_PARAMS = JSON.stringify({
-  type: "Update",
-  schema: "",
-  sender: "",
-  payload: JSON.stringify({ amount: "0", address: { index: 0, subindex: 0}, receiveName: "", maxContractExecutionEnergy: 10000, message: "" }),
-}, null, 2);
+const DEFAULT_REQUEST_PARAMS = JSON.stringify(
+  {
+    type: "Update",
+    schema: "",
+    sender: "",
+    payload: JSON.stringify({
+      amount: "0",
+      address: { index: 0, subindex: 0 },
+      receiveName: "contract.func",
+      maxContractExecutionEnergy: 10000,
+      message: "",
+    }),
+  },
+  null,
+  2
+);
 
 const parse = Result.fromThrowable(JSON.parse, (err) => err as Error);
 
 export default function Client({ client }: Props) {
   const [connectParams, setConnectParams] = useState(DEFAULT_CONNECT_PARAMS);
   const [connectResult, setConnectResult] = useState<Result<SessionTypes.Struct | undefined, Error>>();
-  const dismissConnectResult = useCallback(() => setConnectResult(undefined), []);
+  const [connectPending, setConnectPending] = useState(false);
+  const clearConnectResult = useCallback(() => setConnectResult(undefined), []);
   const connect = useCallback(() => {
-    dismissConnectResult();
+    clearConnectResult();
+    setConnectPending(true);
     return parse(connectParams)
       .asyncAndThen((params) =>
         ResultAsync.fromPromise(
-          connectWallet(client, params, () => {
-            /* ignore closing modal */
-          }), // TODO cancel is also called on error...
+          new Promise<SessionTypes.Struct | undefined>((resolve, reject) =>
+            client
+              .connect(params)
+              .then(({ uri, approval }) => {
+                if (uri) {
+                  // Open modal as we're not connecting to an existing pairing.
+                  QRCodeModal.open(uri, () => resolve(undefined));
+                }
+                return approval();
+              })
+              .then(resolve, reject)
+              .finally(() => QRCodeModal.close())
+          ),
           (err) => err as Error
         )
       )
-      .then(setConnectResult);
-  }, [client, connectParams]);
+      .then(setConnectResult)
+      .then(() => setConnectPending(false));
+  }, [client, connectParams, clearConnectResult]);
 
   const [disconnectTopic, setDisconnectTopic] = useState("");
   const [disconnectReason, setDisconnectReason] = useState(DEFAULT_DISCONNECT_REASON);
   const [disconnectResult, setDisconnectResult] = useState<Result<void, Error>>();
-  const dismissDisconnectResult = useCallback(() => setDisconnectResult(undefined), []);
+  const [disconnectPending, setDisconnectPending] = useState(false);
+  const clearDisconnectResult = useCallback(() => setDisconnectResult(undefined), []);
   const disconnect = useCallback(() => {
-    dismissDisconnectResult();
+    clearDisconnectResult();
+    setDisconnectPending(true);
     return parse(disconnectReason)
       .asyncAndThen((reason) =>
         ResultAsync.fromPromise(
@@ -75,17 +100,20 @@ export default function Client({ client }: Props) {
           (err) => err as Error
         )
       )
-      .then(setDisconnectResult);
-  }, [client, disconnectTopic, disconnectReason]);
+      .then(setDisconnectResult)
+      .then(() => setDisconnectPending(false));
+  }, [client, disconnectTopic, disconnectReason, clearDisconnectResult]);
 
   const [requestTopic, setRequestTopic] = useState("");
   const [requestChain, setRequestChain] = useState("ccd:testnet");
   const [requestMethod, setRequestMethod] = useState(DEFAULT_REQUEST_METHOD);
   const [requestParams, setRequestParams] = useState(DEFAULT_REQUEST_PARAMS);
-  const [requestResult, setRequestResult] = useState<Result<unknown, Error>>();
-  const dismissRequestResult = useCallback(() => setRequestResult(undefined), []);
+  const [requestResult, setRequestResult] = useState<Result<unknown, unknown>>();
+  const [resultPending, setResultPending] = useState(false);
+  const clearRequestResult = useCallback(() => setRequestResult(undefined), []);
   const sendRequest = useCallback(() => {
-    dismissRequestResult();
+    clearRequestResult();
+    setResultPending(true);
     return parse(requestParams)
       .asyncAndThen((params) =>
         ResultAsync.fromPromise(
@@ -97,8 +125,9 @@ export default function Client({ client }: Props) {
           (err) => err as Error
         )
       )
-      .then(setRequestResult);
-  }, [client, requestTopic, requestChain, requestMethod, requestParams]);
+      .then(setRequestResult)
+      .then(() => setResultPending(false));
+  }, [client, requestTopic, requestChain, requestMethod, requestParams, clearRequestResult]);
   return (
     <>
       <Row>
@@ -131,27 +160,29 @@ export default function Client({ client }: Props) {
                       onChange={(e) => setConnectParams(e.target.value)}
                     />
                   </FloatingLabel>
-                  <Button onClick={connect}>Connect</Button>
+                  <Button onClick={connect} disabled={connectPending}>
+                    {connectPending ? <Spinner size="sm" /> : "Connect"}
+                  </Button>
                   {connectResult?.match(
                     (session) => (
                       <>
                         {session && (
                           <>
-                            <Alert variant="success" className="mt-2" dismissible onClose={dismissConnectResult}>
+                            <Alert variant="success" className="mt-2" dismissible onClose={clearConnectResult}>
                               Session with topic <code title={JSON.stringify(session, null, 2)}>{session?.topic}</code>{" "}
                               created
                             </Alert>
                           </>
                         )}
                         {!session && (
-                          <Alert variant="warning" className="mt-2" dismissible onClose={dismissConnectResult}>
+                          <Alert variant="warning" className="mt-2" dismissible onClose={clearConnectResult}>
                             No session created
                           </Alert>
                         )}
                       </>
                     ),
                     (err) => (
-                      <Alert variant="danger" className="mt-2" dismissible onClose={dismissConnectResult}>
+                      <Alert variant="danger" className="mt-2" dismissible onClose={clearConnectResult}>
                         {err.toString()}
                       </Alert>
                     )
@@ -174,24 +205,24 @@ export default function Client({ client }: Props) {
                       onChange={(e) => setDisconnectReason(e.target.value)}
                     />
                   </FloatingLabel>
-                  <Button variant="danger" onClick={disconnect}>
-                    Disconnect
+                  <Button variant="danger" onClick={disconnect} disabled={disconnectPending}>
+                    {disconnectPending ? <Spinner size="sm" /> : "Disconnect"}
                   </Button>
                   {disconnectResult?.match(
                     () => (
-                      <Alert variant="success" className="mt-2" dismissible onClose={dismissDisconnectResult}>
+                      <Alert variant="success" className="mt-2" dismissible onClose={clearDisconnectResult}>
                         OK
                       </Alert>
                     ),
                     (err) => (
-                      <Alert variant="danger" className="mt-2" dismissible onClose={dismissDisconnectResult}>
+                      <Alert variant="danger" className="mt-2" dismissible onClose={clearDisconnectResult}>
                         {err.toString()}
                       </Alert>
                     )
                   )}
                 </Col>
               </Row>
-              <Row className="mt-2">
+              <Row className="mt-3">
                 <Col>
                   <Card.Title>Request</Card.Title>
                   <FloatingLabel label="Topic" className="mb-2">
@@ -210,7 +241,7 @@ export default function Client({ client }: Props) {
                   <FloatingLabel label="Params (JSON)" className="mb-2">
                     <Form.Control
                       as="textarea"
-                      style={{ height: "20em" }}
+                      style={{ height: "10em" }}
                       value={requestParams}
                       onChange={(e) => setRequestParams(e.target.value)}
                     />
@@ -218,16 +249,19 @@ export default function Client({ client }: Props) {
                   <FloatingLabel label="Expiry (not yet supported)" className="mb-2">
                     <Form.Control type="text" value={""} disabled />
                   </FloatingLabel>
-                  <Button onClick={sendRequest}>Send</Button>
+                  <Button onClick={sendRequest} disabled={resultPending}>
+                    {resultPending ? <Spinner size="sm" /> : "Send"}
+                  </Button>
                   {requestResult?.match(
                     (res) => (
-                      <Alert variant="success" className="mt-2" dismissible onClose={dismissRequestResult}>
-                        <pre>{JSON.stringify(res, null, 2)}</pre>
+                      <Alert variant="success" className="mt-2" dismissible onClose={clearRequestResult}>
+                        Response:
+                        <pre className="mb-0">{typeof res === "string" ? res : JSON.stringify(res, null, 2)}</pre>
                       </Alert>
                     ),
                     (err) => (
-                      <Alert variant="danger" className="mt-2" dismissible onClose={dismissRequestResult}>
-                        {err.toString()}
+                      <Alert variant="danger" className="mt-2" dismissible onClose={clearRequestResult}>
+                        {err instanceof Error ? err.message || err.stack : JSON.stringify(err, null, 2)}
                       </Alert>
                     )
                   )}
