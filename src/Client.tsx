@@ -35,8 +35,9 @@ const parse = Result.fromThrowable(JSON.parse, (err) => err as Error);
 export default function Client({ client }: Props) {
   const [connectParams, setConnectParams] = useState(DEFAULT_CONNECT_PARAMS);
   const [connectResult, setConnectResult] = useState<Result<SessionTypes.Struct | undefined, Error>>(); // TODO !!!
+  const dismissConnectResult = useCallback(() => setConnectResult(undefined), []);
   const connect = useCallback(() => {
-    setConnectResult(undefined);
+    dismissConnectResult();
     return parse(connectParams)
       .asyncAndThen((params) =>
         ResultAsync.fromPromise(
@@ -52,8 +53,9 @@ export default function Client({ client }: Props) {
   const [disconnectTopic, setDisconnectTopic] = useState("");
   const [disconnectReason, setDisconnectReason] = useState(DEFAULT_DISCONNECT_REASON);
   const [disconnectResult, setDisconnectResult] = useState<Result<void, Error>>();
+  const dismissDisconnectResult = useCallback(() => setDisconnectResult(undefined), []);
   const disconnect = useCallback(() => {
-    setDisconnectResult(undefined);
+    dismissDisconnectResult();
     return parse(disconnectReason)
       .asyncAndThen((reason) =>
         ResultAsync.fromPromise(
@@ -61,10 +63,7 @@ export default function Client({ client }: Props) {
             topic: disconnectTopic,
             reason,
           }),
-          (err) => {
-            console.error({ err });
-            return err as Error;
-          }
+          (err) => err as Error
         )
       )
       .then(setDisconnectResult);
@@ -104,18 +103,26 @@ export default function Client({ client }: Props) {
                   <Button onClick={connect}>Connect</Button>
                   {connectResult?.match(
                     (session) => (
-                      <Alert variant="success">
+                      <>
                         {session && (
                           <>
-                            Retrieved session with topic <code>{session?.topic}</code>.
+                            <Alert variant="success" dismissible onClose={dismissConnectResult}>
+                              Session with topic <code title={JSON.stringify(session, null, 2)}>{session?.topic}</code>{" "}
+                              created
+                            </Alert>
                           </>
                         )}
-                        {!session && <>Retrieved empty session.</>}
-                        {/*<pre>{JSON.stringify(session, null, 2)}</pre>*/}
-                      </Alert>
+                        {!session && (
+                          <Alert variant="warning" dismissible onClose={dismissConnectResult}>
+                            No session created
+                          </Alert>
+                        )}
+                      </>
                     ),
                     (err) => (
-                      <Alert variant="danger">Error: {err.toString()}</Alert>
+                      <Alert variant="danger" dismissible onClose={dismissConnectResult}>
+                        {err.toString()}
+                      </Alert>
                     )
                   )}
                 </Col>
@@ -137,21 +144,21 @@ export default function Client({ client }: Props) {
                       onChange={(e) => setDisconnectReason(e.target.value)}
                     />
                   </FloatingLabel>
+                  <Button variant="danger" onClick={disconnect}>
+                    Disconnect
+                  </Button>
                   {disconnectResult?.match(
                     () => (
-                      <Alert variant="success" className="mt-2">
+                      <Alert variant="success" className="mt-2" dismissible onClose={dismissDisconnectResult}>
                         OK
                       </Alert>
                     ),
                     (err) => (
-                      <Alert variant="danger" className="mt-2">
+                      <Alert variant="danger" className="mt-2" dismissible onClose={dismissDisconnectResult}>
                         {err.toString()}
                       </Alert>
                     )
                   )}
-                  <Button variant="danger" onClick={disconnect}>
-                    Disconnect
-                  </Button>
                 </Col>
               </Row>
             </Card.Body>
