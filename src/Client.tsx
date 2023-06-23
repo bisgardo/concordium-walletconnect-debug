@@ -1,12 +1,13 @@
 import { ISignClient, SessionTypes } from "@walletconnect/types";
+import QRCodeModal from "@walletconnect/qrcode-modal";
 import { Alert, Button, Card, Col, FloatingLabel, Form, ListGroup, Row, Spinner } from "react-bootstrap";
+import { useCallback, useEffect, useState } from "react";
+import { Result, ResultAsync } from "neverthrow";
+import Err from "./Err.tsx";
 import Expiry from "./Expiry.tsx";
 import Metadata from "./Metadata.tsx";
 import Pairing from "./Pairing.tsx";
 import Session from "./Session.tsx";
-import { useCallback, useEffect, useState } from "react";
-import { Result, ResultAsync } from "neverthrow";
-import QRCodeModal from "@walletconnect/qrcode-modal";
 
 interface Props {
   client: ISignClient;
@@ -54,7 +55,7 @@ const parse = Result.fromThrowable(JSON.parse, (err) => err as Error);
 
 export default function Client({ client, reset }: Props) {
   const [connectParams, setConnectParams] = useState(DEFAULT_CONNECT_PARAMS);
-  const [connectResult, setConnectResult] = useState<Result<SessionTypes.Struct | undefined, Error>>();
+  const [connectResult, setConnectResult] = useState<Result<SessionTypes.Struct | undefined, unknown>>();
   const [connecting, setConnecting] = useState(false);
   const clearConnectResult = useCallback(() => setConnectResult(undefined), []);
   const connect = useCallback(() => {
@@ -76,7 +77,7 @@ export default function Client({ client, reset }: Props) {
               .then(resolve, reject)
               .finally(() => QRCodeModal.close())
           ),
-          (err) => err as Error
+          (err) => err
         )
       )
       .then(setConnectResult)
@@ -85,7 +86,7 @@ export default function Client({ client, reset }: Props) {
 
   const [disconnectTopic, setDisconnectTopic] = useState("");
   const [disconnectReason, setDisconnectReason] = useState(DEFAULT_DISCONNECT_REASON);
-  const [disconnectResult, setDisconnectResult] = useState<Result<void, Error>>();
+  const [disconnectResult, setDisconnectResult] = useState<Result<void, unknown>>();
   const [disconnecting, setDisconnecting] = useState(false);
   const clearDisconnectResult = useCallback(() => setDisconnectResult(undefined), []);
   const disconnect = useCallback(() => {
@@ -98,7 +99,7 @@ export default function Client({ client, reset }: Props) {
             topic: disconnectTopic,
             reason,
           }),
-          (err) => err as Error
+          (err) => err
         )
       )
       .then(setDisconnectResult)
@@ -123,7 +124,7 @@ export default function Client({ client, reset }: Props) {
             request: { method: requestMethod, params },
             chainId: requestChain,
           }),
-          (err) => err as Error
+          (err) => err
         )
       )
       .then(setRequestResult)
@@ -192,7 +193,7 @@ export default function Client({ client, reset }: Props) {
                     ),
                     (err) => (
                       <Alert variant="danger" className="mt-2" dismissible onClose={clearConnectResult}>
-                        {err.toString()}
+                        <Err err={err}/>
                       </Alert>
                     )
                   )}
@@ -225,7 +226,7 @@ export default function Client({ client, reset }: Props) {
                     ),
                     (err) => (
                       <Alert variant="danger" className="mt-2" dismissible onClose={clearDisconnectResult}>
-                        {err.toString()}
+                        <Err err={err}/>
                       </Alert>
                     )
                   )}
@@ -270,7 +271,7 @@ export default function Client({ client, reset }: Props) {
                     ),
                     (err) => (
                       <Alert variant="danger" className="mt-2" dismissible onClose={clearRequestResult}>
-                        {err instanceof Error ? err.message || err.stack : JSON.stringify(err, null, 2)}
+                        <Err err={err}/>
                       </Alert>
                     )
                   )}
