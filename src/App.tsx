@@ -38,7 +38,7 @@ export default function App() {
   // Force refresh "client" component tree as React doesn't track changes within it.
   // Using the dummy value as prop "key" to the 'Client' component would force a complete rebuild/redraw of the entire component tree.
   // This is not necessary for the components to refresh and would also clear output/error messages, which isn't what we want.
-  const [_refreshCount, forceUpdate] = useReducer((x) => x + 1, 0);
+  const [refreshCount, forceUpdate] = useReducer((x) => x + 1, 0);
 
   // If we listened to all events and rendered them (directly from the 'Client' component),
   // this should automagically trigger a refresh of the whole subtree,
@@ -74,7 +74,7 @@ export default function App() {
           </h1>
           {client?.match(
             (client) => (
-              <Client client={client} />
+              <Client client={client} reset={refreshCount} />
             ),
             (err) => (
               <Alert variant="danger">

@@ -4,12 +4,13 @@ import Expiry from "./Expiry.tsx";
 import Metadata from "./Metadata.tsx";
 import Pairing from "./Pairing.tsx";
 import Session from "./Session.tsx";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Result, ResultAsync } from "neverthrow";
 import QRCodeModal from "@walletconnect/qrcode-modal";
 
 interface Props {
   client: ISignClient;
+  reset: number;
 }
 
 const DEFAULT_CONNECT_PARAMS = JSON.stringify(
@@ -51,14 +52,14 @@ const DEFAULT_REQUEST_PARAMS = JSON.stringify(
 
 const parse = Result.fromThrowable(JSON.parse, (err) => err as Error);
 
-export default function Client({ client }: Props) {
+export default function Client({ client, reset }: Props) {
   const [connectParams, setConnectParams] = useState(DEFAULT_CONNECT_PARAMS);
   const [connectResult, setConnectResult] = useState<Result<SessionTypes.Struct | undefined, Error>>();
-  const [connectPending, setConnectPending] = useState(false);
+  const [connecting, setConnecting] = useState(false);
   const clearConnectResult = useCallback(() => setConnectResult(undefined), []);
   const connect = useCallback(() => {
     clearConnectResult();
-    setConnectPending(true);
+    setConnecting(true);
     return parse(connectParams)
       .asyncAndThen((params) =>
         ResultAsync.fromPromise(
@@ -79,17 +80,17 @@ export default function Client({ client }: Props) {
         )
       )
       .then(setConnectResult)
-      .then(() => setConnectPending(false));
+      .then(() => setConnecting(false));
   }, [client, connectParams, clearConnectResult]);
 
   const [disconnectTopic, setDisconnectTopic] = useState("");
   const [disconnectReason, setDisconnectReason] = useState(DEFAULT_DISCONNECT_REASON);
   const [disconnectResult, setDisconnectResult] = useState<Result<void, Error>>();
-  const [disconnectPending, setDisconnectPending] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
   const clearDisconnectResult = useCallback(() => setDisconnectResult(undefined), []);
   const disconnect = useCallback(() => {
     clearDisconnectResult();
-    setDisconnectPending(true);
+    setDisconnecting(true);
     return parse(disconnectReason)
       .asyncAndThen((reason) =>
         ResultAsync.fromPromise(
@@ -101,7 +102,7 @@ export default function Client({ client }: Props) {
         )
       )
       .then(setDisconnectResult)
-      .then(() => setDisconnectPending(false));
+      .then(() => setDisconnecting(false));
   }, [client, disconnectTopic, disconnectReason, clearDisconnectResult]);
 
   const [requestTopic, setRequestTopic] = useState("");
@@ -109,11 +110,11 @@ export default function Client({ client }: Props) {
   const [requestMethod, setRequestMethod] = useState(DEFAULT_REQUEST_METHOD);
   const [requestParams, setRequestParams] = useState(DEFAULT_REQUEST_PARAMS);
   const [requestResult, setRequestResult] = useState<Result<unknown, unknown>>();
-  const [resultPending, setResultPending] = useState(false);
+  const [requesting, setRequesting] = useState(false);
   const clearRequestResult = useCallback(() => setRequestResult(undefined), []);
   const sendRequest = useCallback(() => {
     clearRequestResult();
-    setResultPending(true);
+    setRequesting(true);
     return parse(requestParams)
       .asyncAndThen((params) =>
         ResultAsync.fromPromise(
@@ -126,8 +127,16 @@ export default function Client({ client }: Props) {
         )
       )
       .then(setRequestResult)
-      .then(() => setResultPending(false));
+      .then(() => setRequesting(false));
   }, [client, requestTopic, requestChain, requestMethod, requestParams, clearRequestResult]);
+  useEffect(() => {
+    setConnecting(false);
+    setDisconnecting(false);
+    setRequesting(false);
+    clearConnectResult();
+    clearDisconnectResult();
+    clearRequestResult();
+  }, [reset]);
   return (
     <>
       <Row>
@@ -160,8 +169,8 @@ export default function Client({ client }: Props) {
                       onChange={(e) => setConnectParams(e.target.value)}
                     />
                   </FloatingLabel>
-                  <Button onClick={connect} disabled={connectPending}>
-                    {connectPending ? <Spinner size="sm" /> : "Connect"}
+                  <Button onClick={connect} disabled={connecting}>
+                    {connecting ? <Spinner size="sm" /> : "Connect"}
                   </Button>
                   {connectResult?.match(
                     (session) => (
@@ -205,8 +214,8 @@ export default function Client({ client }: Props) {
                       onChange={(e) => setDisconnectReason(e.target.value)}
                     />
                   </FloatingLabel>
-                  <Button variant="danger" onClick={disconnect} disabled={disconnectPending}>
-                    {disconnectPending ? <Spinner size="sm" /> : "Disconnect"}
+                  <Button variant="danger" onClick={disconnect} disabled={disconnecting}>
+                    {disconnecting ? <Spinner size="sm" /> : "Disconnect"}
                   </Button>
                   {disconnectResult?.match(
                     () => (
@@ -249,8 +258,8 @@ export default function Client({ client }: Props) {
                   <FloatingLabel label="Expiry (not yet supported)" className="mb-2">
                     <Form.Control type="text" value={""} disabled />
                   </FloatingLabel>
-                  <Button onClick={sendRequest} disabled={resultPending}>
-                    {resultPending ? <Spinner size="sm" /> : "Send"}
+                  <Button onClick={sendRequest} disabled={requesting}>
+                    {requesting ? <Spinner size="sm" /> : "Send"}
                   </Button>
                   {requestResult?.match(
                     (res) => (
