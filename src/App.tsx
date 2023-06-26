@@ -4,7 +4,6 @@ import { Result, ResultAsync } from "neverthrow";
 import { ReactElement, useCallback, useEffect, useReducer, useState } from "react";
 import { Alert, Button, Col, Container, Row } from "react-bootstrap";
 import Client from "./Client.tsx";
-import Events from "./Events.tsx";
 
 const WALLET_CONNECT_OPTS: SignClientTypes.Options = {
   projectId: "76324905a70fe5c388bab46d3e0564dc",
@@ -47,33 +46,34 @@ export default function App() {
       client.map((client) => {
         console.log("Registering listeners for all events.");
         client.on("session_proposal", ({ id, params, verifyContext }) =>
-          addEventElement(<>Session proposal: {JSON.stringify({ id, params, verifyContext })}</>)
+          addEventElement(<>Session proposed: {JSON.stringify({ id, params, verifyContext })}</>)
         );
         client.on("session_update", ({ id, topic, params }) =>
-          addEventElement(<>Session update: {JSON.stringify({ id, topic, params })}</>)
+          addEventElement(<>Session updated: {JSON.stringify({ id, topic, params })}</>)
         );
         client.on("session_extend", ({ id, topic }) =>
-          addEventElement(<>Session extend: {JSON.stringify({ id, topic })}</>)
+          addEventElement(<>Session extended: {JSON.stringify({ id, topic })}</>)
         );
         client.on("session_ping", ({ id, topic }) =>
-          addEventElement(<>Session ping: {JSON.stringify({ id, topic })}</>)
+          addEventElement(<>Session pinged: {JSON.stringify({ id, topic })}</>)
         );
         client.on("session_delete", ({ id, topic }) =>
-          addEventElement(<> Session delete: {JSON.stringify({ id, topic })} </>)
+          addEventElement(<>Session deleted: {JSON.stringify({ id, topic })} </>)
         );
-        client.on("session_expire", ({ topic }) => addEventElement(<>Session expire: {JSON.stringify({ topic })}</>));
+        client.on("session_expire", ({ topic }) => addEventElement(<>Session expired: {JSON.stringify({ topic })}</>));
         client.on("session_request", ({ id, topic, params, verifyContext }) =>
-          addEventElement(<>Session request: {JSON.stringify({ id, topic, params, verifyContext })}</>)
+          addEventElement(<>Request received: {JSON.stringify({ id, topic, params, verifyContext })}</>)
         );
         client.on("session_request_sent", ({ id, topic, request, chainId }) =>
-          addEventElement(<>Session request sent: {JSON.stringify({ id, topic, request, chainId })}</>)
+          addEventElement(<>Request sent: {JSON.stringify({ id, topic, request, chainId })}</>)
         );
         client.on("session_event", ({ id, topic, params }) =>
           addEventElement(<> Session event: {JSON.stringify({ id, topic, params })} </>)
         );
-        client.on("proposal_expire", ({ id }) => addEventElement(<>Proposal expire: {JSON.stringify({ id })}</>));
+        client.on("proposal_expire", ({ id }) => addEventElement(<>Proposal expired: {JSON.stringify({ id })}</>));
         return () => {
           console.log("Removing all event listeners.");
+          // TODO Deregister only listeners that were registered.
           client.removeAllListeners("session_proposal");
           client.removeAllListeners("session_update");
           client.removeAllListeners("session_extend");
@@ -87,7 +87,7 @@ export default function App() {
         };
       });
     }
-  }, [client]);
+  }, [client, addEventElement]);
 
   return (
     <Container fluid>
@@ -101,7 +101,7 @@ export default function App() {
           </h1>
           {client?.match(
             (client) => (
-              <Client client={client} reset={refreshCount} />
+              <Client client={client} eventElements={eventElements} reset={refreshCount} />
             ),
             (err) => (
               <Alert variant="danger">
@@ -110,11 +110,6 @@ export default function App() {
               </Alert>
             )
           )}
-        </Col>
-      </Row>
-      <Row>
-        <Col>
-          <Events eventElements={eventElements} />
         </Col>
       </Row>
     </Container>

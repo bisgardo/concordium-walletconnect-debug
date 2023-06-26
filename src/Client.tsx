@@ -1,16 +1,18 @@
 import { ISignClient, SessionTypes } from "@walletconnect/types";
 import QRCodeModal from "@walletconnect/qrcode-modal";
 import { Alert, Button, Card, Col, FloatingLabel, Form, ListGroup, Row, Spinner } from "react-bootstrap";
-import { useCallback, useEffect, useState } from "react";
+import { ReactElement, useCallback, useEffect, useState } from "react";
 import { Result, ResultAsync } from "neverthrow";
 import Err from "./Err.tsx";
 import Expiry from "./Expiry.tsx";
 import Metadata from "./Metadata.tsx";
 import Pairing from "./Pairing.tsx";
 import Session from "./Session.tsx";
+import Events from "./Events.tsx";
 
 interface Props {
   client: ISignClient;
+  eventElements: Array<ReactElement>;
   reset: number;
 }
 
@@ -53,7 +55,7 @@ const DEFAULT_REQUEST_PARAMS = JSON.stringify(
 
 const parse = Result.fromThrowable(JSON.parse, (err) => err as Error);
 
-export default function Client({ client, reset }: Props) {
+export default function Client({ client, eventElements, reset }: Props) {
   const [connectParams, setConnectParams] = useState(DEFAULT_CONNECT_PARAMS);
   const [connectResult, setConnectResult] = useState<Result<SessionTypes.Struct | undefined, unknown>>();
   const [connecting, setConnecting] = useState(false);
@@ -137,7 +139,7 @@ export default function Client({ client, reset }: Props) {
     clearConnectResult();
     clearDisconnectResult();
     clearRequestResult();
-  }, [reset]);
+  }, [reset, clearConnectResult, clearDisconnectResult, clearRequestResult]);
   return (
     <>
       <Row>
@@ -275,6 +277,11 @@ export default function Client({ client, reset }: Props) {
                       </Alert>
                     )
                   )}
+                </Col>
+              </Row>
+              <Row>
+                <Col>
+                  <Events eventElements={eventElements} />
                 </Col>
               </Row>
             </Card.Body>

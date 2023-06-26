@@ -8,16 +8,14 @@ interface Props {
 export default function Events({ eventElements }: Props) {
   return (
     <>
-      <Card>
-        <Card.Header>Events ({eventElements.length})</Card.Header>
-        <Card.Body>
-          <ListGroup>
-            {eventElements.map((e, idx) => (
-              <ListGroup.Item key={idx}>{e}</ListGroup.Item>
-            ))}
-          </ListGroup>
-        </Card.Body>
-      </Card>
+      <Card.Body>
+        <Card.Title>Events ({eventElements.length})</Card.Title>
+        <ListGroup>
+          {eventElements.map((e, idx) => (
+            <ListGroup.Item key={idx}>{e}</ListGroup.Item>
+          ))}
+        </ListGroup>
+      </Card.Body>
     </>
   );
 }
