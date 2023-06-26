@@ -193,7 +193,7 @@ export default function Client({ client, reset }: Props) {
                     ),
                     (err) => (
                       <Alert variant="danger" className="mt-2" dismissible onClose={clearConnectResult}>
-                        <Err err={err}/>
+                        <Err err={err} />
                       </Alert>
                     )
                   )}
@@ -226,7 +226,7 @@ export default function Client({ client, reset }: Props) {
                     ),
                     (err) => (
                       <Alert variant="danger" className="mt-2" dismissible onClose={clearDisconnectResult}>
-                        <Err err={err}/>
+                        <Err err={err} />
                       </Alert>
                     )
                   )}
@@ -271,7 +271,7 @@ export default function Client({ client, reset }: Props) {
                     ),
                     (err) => (
                       <Alert variant="danger" className="mt-2" dismissible onClose={clearRequestResult}>
-                        <Err err={err}/>
+                        <Err err={err} />
                       </Alert>
                     )
                   )}
