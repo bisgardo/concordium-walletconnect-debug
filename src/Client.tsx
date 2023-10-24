@@ -1,5 +1,5 @@
+import { WalletConnectModal } from "@walletconnect/modal";
 import { ISignClient, SessionTypes } from "@walletconnect/types";
-import QRCodeModal from "@walletconnect/qrcode-modal";
 import { Alert, Button, Card, Col, FloatingLabel, Form, ListGroup, Row, Spinner } from "react-bootstrap";
 import { ReactElement, useCallback, useEffect, useState } from "react";
 import { Result, ResultAsync } from "neverthrow";
@@ -61,8 +61,24 @@ export default function Client({ client, eventElements, reset }: Props) {
   const [connecting, setConnecting] = useState(false);
   const clearConnectResult = useCallback(() => setConnectResult(undefined), []);
   const connect = useCallback(() => {
+    // TODO Construct config somewhere outside.
+    const modal = new WalletConnectModal({
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      projectId: client.core.projectId!,
+      enableExplorer: true,
+      mobileWallets: [
+        {
+          id: "concordium-debug",
+          name: "Concordium (debug)",
+          links: {
+            native: "concordiumwallet",
+            universal: "wallet.concordium.software",
+          },
+        },
+      ],
+    });
+    modal.subscribeModal(({ open }) => setConnecting(open));
     clearConnectResult();
-    setConnecting(true);
     return parse(connectParams)
       .asyncAndThen((params) =>
         ResultAsync.fromPromise(
@@ -70,20 +86,20 @@ export default function Client({ client, eventElements, reset }: Props) {
             client
               .connect(params)
               .then(({ uri, approval }) => {
+                let res = Promise.resolve();
                 if (uri) {
                   // Open modal as we're not connecting to an existing pairing.
-                  QRCodeModal.open(uri, () => resolve(undefined));
+                  res = res.then(() => modal.openModal({ uri }));
                 }
-                return approval();
+                return res.then(approval);
               })
               .then(resolve, reject)
-              .finally(() => QRCodeModal.close())
+              .finally(() => modal.closeModal())
           ),
           (err) => err
         )
       )
-      .then(setConnectResult)
-      .then(() => setConnecting(false));
+      .then(setConnectResult);
   }, [client, connectParams, clearConnectResult]);
 
   const [disconnectTopic, setDisconnectTopic] = useState("");

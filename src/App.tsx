@@ -47,25 +47,65 @@ export default function App() {
         console.log("Registering listeners for all events.");
         type EA = SignClientTypes.EventArguments;
         const onSessionProposal = ({ id, params, verifyContext }: EA["session_proposal"]) =>
-          addEventElement(<>Session proposed: <code>{JSON.stringify({ id, params, verifyContext })}</code></>);
+          addEventElement(
+            <>
+              Session proposed: <code>{JSON.stringify({ id, params, verifyContext })}</code>
+            </>
+          );
         const onSessionUpdate = ({ id, topic, params }: EA["session_update"]) =>
-          addEventElement(<>Session updated: <code>{JSON.stringify({ id, topic, params })}</code></>);
+          addEventElement(
+            <>
+              Session updated: <code>{JSON.stringify({ id, topic, params })}</code>
+            </>
+          );
         const onSessionExtend = ({ id, topic }: EA["session_extend"]) =>
-          addEventElement(<>Session extended: <code>{JSON.stringify({ id, topic })}</code></>);
+          addEventElement(
+            <>
+              Session extended: <code>{JSON.stringify({ id, topic })}</code>
+            </>
+          );
         const onSessionPing = ({ id, topic }: EA["session_ping"]) =>
-          addEventElement(<>Session pinged: <code>{JSON.stringify({ id, topic })}</code></>);
+          addEventElement(
+            <>
+              Session pinged: <code>{JSON.stringify({ id, topic })}</code>
+            </>
+          );
         const onSessionDelete = ({ id, topic }: EA["session_delete"]) =>
-          addEventElement(<>Session deleted: <code>{JSON.stringify({ id, topic })}</code></>);
+          addEventElement(
+            <>
+              Session deleted: <code>{JSON.stringify({ id, topic })}</code>
+            </>
+          );
         const onSessionExpire = ({ topic }: EA["session_expire"]) =>
-          addEventElement(<>Session expired: <code>{JSON.stringify({ topic })}</code></>);
+          addEventElement(
+            <>
+              Session expired: <code>{JSON.stringify({ topic })}</code>
+            </>
+          );
         const onSessionRequest = ({ id, topic, params, verifyContext }: EA["session_request"]) =>
-          addEventElement(<>Request received: <code>{JSON.stringify({ id, topic, params, verifyContext })}</code></>);
+          addEventElement(
+            <>
+              Request received: <code>{JSON.stringify({ id, topic, params, verifyContext })}</code>
+            </>
+          );
         const onSessionRequestSent = ({ id, topic, request, chainId }: EA["session_request_sent"]) =>
-          addEventElement(<>Request sent: <code>{JSON.stringify({ id, topic, request, chainId })}</code></>);
+          addEventElement(
+            <>
+              Request sent: <code>{JSON.stringify({ id, topic, request, chainId })}</code>
+            </>
+          );
         const onSessionEvent = ({ id, topic, params }: EA["session_event"]) =>
-          addEventElement(<> Session event: <code>{JSON.stringify({ id, topic, params })}</code> </>);
+          addEventElement(
+            <>
+              Session event: <code>{JSON.stringify({ id, topic, params })}</code>
+            </>
+          );
         const onProposalExpire = ({ id }: EA["proposal_expire"]) =>
-          addEventElement(<>Proposal expired: <code>{JSON.stringify({ id })}</code></>);
+          addEventElement(
+            <>
+              Proposal expired: <code>{JSON.stringify({ id })}</code>
+            </>
+          );
         client.on("session_proposal", onSessionProposal);
         client.on("session_update", onSessionUpdate);
         client.on("session_extend", onSessionExtend);
